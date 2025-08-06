@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import { minLength } from "zod";
 
 const userSchema = new mongoose.Schema({
   name: {
