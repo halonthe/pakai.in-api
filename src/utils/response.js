@@ -8,5 +8,5 @@ export function successResponse(
 }
 
 export function errorResponse(res, errors, code = 500) {
-  return res.status(code).json({ success: true, errors });
+  return res.status(code).json({ success: false, errors });
 }
