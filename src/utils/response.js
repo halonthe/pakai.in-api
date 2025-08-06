@@ -7,11 +7,6 @@ export function successResponse(
   return res.status(code).json({ success: true, message: msg, data });
 }
 
-export function errorResponse(
-  res,
-  errors,
-  msg = "Internal Server Error",
-  code = 500
-) {
-  return res.status(code).json({ success: true, msg, errors });
+export function errorResponse(res, errors, code = 500) {
+  return res.status(code).json({ success: true, errors });
 }
