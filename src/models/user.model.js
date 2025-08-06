@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { minLength } from "zod";
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     trim: true,
+    minLength: 3,
     maxlength: 100,
   },
   email: {
