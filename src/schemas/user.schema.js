@@ -9,19 +9,19 @@ const passwordSchema = z
   .regex(/\d/, "Password must contain at least one number")
   .regex(/[!@#$%^&*]/, "Password must contain at least one symbol");
 
-export const registerSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(3, "Name to short")
-    .max(100, "Max 100 characters"),
-  email: z.email("Please enter a valid email").lowercase(),
-  password: passwordSchema,
-  confirmPassword: z
-    .string()
-    .refine((data) => data.password === data.confirmPassword, {
-      message: "Password and Confirm Password doesn't match",
-      path: ["confirmPassword"],
-    })
-    .transform(({ name, email, password }) => ({ name, email, password })),
-});
+export const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(3, "Name to short")
+      .max(100, "Max 100 characters"),
+    email: z.email("Please enter a valid email").lowercase(),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password and Confirm Password doesn't match",
+    path: ["confirmPassword"],
+  })
+  .transform(({ name, email, password }) => ({ name, email, password }));

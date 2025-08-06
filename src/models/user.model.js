@@ -31,16 +31,13 @@ const userSchema = new mongoose.Schema({
   },
   providerId: {
     type: String, // ID from OAuth provider (Google/GitHub)
-    default: null,
+    default: "",
+    required: false,
   },
   role: {
     type: String,
     enum: ["customer", "admin"],
     default: "customer",
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
   },
   address: {
     street: String,
@@ -64,14 +61,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false,
   },
-  verificationToken: {
-    type: String,
-    select: false,
-  },
-  verificationTokenExpired: {
-    type: String,
-    select: false,
-  },
   resetPasswordToken: {
     type: String,
     select: false,
@@ -84,11 +73,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false,
   },
-});
+},{timestamps: true});
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (providerId && this.provider !== "credentials") {
+  if (this.providerId && this.provider !== "credentials") {
     this.isVerified = true;
   }
 
