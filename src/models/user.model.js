@@ -31,8 +31,7 @@ const userSchema = new mongoose.Schema({
   },
   providerId: {
     type: String, // ID from OAuth provider (Google/GitHub)
-    default: "",
-    required: false,
+    default: null,
   },
   role: {
     type: String,
