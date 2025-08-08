@@ -188,7 +188,6 @@ export async function sendVerificationEmail(email, name, url) {
     from: "Pakai.in",
     to: email,
     subject: "Welcome to Pakai.in - Verify your email",
-    text: "asd",
     html: createVerificationTemplate(name, url),
   });
 }

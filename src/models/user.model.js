@@ -1,78 +1,73 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    minLength: 3,
-    maxlength: 100,
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minLength: 3,
+      maxlength: 100,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      minlength: 6,
+    },
+    avatar: {
+      type: String,
+      default: "https://www.gravatar.com/avatar/?d=mp", // Placeholder avatar
+    },
+    provider: {
+      type: String,
+      enum: ["credentials", "google", "github", "facebook"],
+      default: "credentials",
+    },
+    providerId: {
+      type: String, // ID from OAuth provider (Google/GitHub)
+      default: null,
+    },
+    role: {
+      type: String,
+      enum: ["customer", "admin"],
+      default: "customer",
+    },
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false, // hide from the query (for security reason).
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    minlength: 6,
-  },
-  avatar: {
-    type: String,
-    default: "https://www.gravatar.com/avatar/?d=mp", // Placeholder avatar
-  },
-  provider: {
-    type: String,
-    enum: ["credentials", "google", "github", "facebook"],
-    default: "credentials",
-  },
-  providerId: {
-    type: String, // ID from OAuth provider (Google/GitHub)
-    default: null,
-  },
-  role: {
-    type: String,
-    enum: ["customer", "admin"],
-    default: "customer",
-  },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-  },
-  phone: {
-    type: String,
-    default: "",
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  verificationToken: {
-    type: String,
-    select: false, // hide from the query (for security reason).
-  },
-  verificationTokenExpired: {
-    type: String,
-    select: false,
-  },
-  resetPasswordToken: {
-    type: String,
-    select: false,
-  },
-  resetPasswordTokenExpired: {
-    type: String,
-    select: false,
-  },
-  refreshToken: {
-    type: String,
-    select: false,
-  },
-},{timestamps: true});
+  { timestamps: true }
+);
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

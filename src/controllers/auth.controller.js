@@ -1,8 +1,9 @@
 import "dotenv/config";
 import User from "../models/user.model.js";
 import { successResponse, errorResponse } from "../utils/response.js";
-import generateToken from "../utils/generate-token.js";
 import { sendVerificationEmail } from "../utils/email-service.js";
+import generateToken from "../utils/generate-token.js";
+import verifyToken from "../utils/verify-token.js";
 
 export async function register(req, res) {
   const { name, email, password } = req.body;
@@ -19,26 +20,50 @@ export async function register(req, res) {
     });
 
     // 3 - create token and link activation
-    const activationToken = generateToken("access", user);
-    const expiredToken = Date.now() + 60 * 60 * 1000;
+    const activationToken = generateToken(user, "refresh");
     const activationLink = `${process.env.FRONTEND_URL}/verify-account/${activationToken}`;
 
     const updateToken = await User.findByIdAndUpdate(user._id, {
       verificationToken: activationToken,
-      verificationTokenExpired: expiredToken,
     });
 
     // 4 - send email verification
     if (updateToken) {
-      sendVerificationEmail(email, name, activationLink);
+      await sendVerificationEmail(email, name, activationLink);
     }
 
     return successResponse(
       res,
-      null,
+      undefined,
       "Register success, please check email to activate account",
       201
     );
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function verifyAccount(req, res) {
+  try {
+    const { token } = req.params;
+
+    // 1 - check token
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) return errorResponse(res, "Token invalid", 400);
+
+    try {
+      verifyToken(token, "refresh");
+    } catch (error) {
+      return errorResponse(res, "Token expired", 400);
+    }
+
+    // 2 - activate user
+    await User.findByIdAndUpdate(user._id, {
+      isVerified: true,
+      verificationToken: null,
+    });
+
+    return successResponse(res, undefined, "Account has been verified");
   } catch (error) {
     return errorResponse(res, error.message);
   }
