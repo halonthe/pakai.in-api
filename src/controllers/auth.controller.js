@@ -1,9 +1,9 @@
 import "dotenv/config";
-import User from "../models/user.model.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { sendVerificationEmail } from "../utils/email-service.js";
 import generateToken from "../utils/generate-token.js";
 import verifyToken from "../utils/verify-token.js";
+import User from "../models/user.model.js";
 
 export async function register(req, res) {
   const { name, email, password } = req.body;
@@ -43,9 +43,9 @@ export async function register(req, res) {
   }
 }
 
-export async function verifyAccount(req, res) {
+export async function verifyEmail(req, res) {
   try {
-    const { token } = req.params;
+    const { token } = req.query;
 
     // 1 - check token
     const user = await User.findOne({ verificationToken: token });
@@ -87,10 +87,29 @@ export async function login(req, res) {
     await User.findOneAndUpdate({ email }, { refreshToken });
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
+      secure: process.env.COOKIE_SECURE === "true",
       maxAge: 24 * 60 * 60 * 1000, // 24hours
     });
 
     return successResponse(res, { token: accessToken }, "login successfull");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function socialLoginSuccess(req, res) {
+  try {
+    const refreshToken = generateToken(req.user, "refresh");
+
+    await User.findByIdAndUpdate(req.user._id, { refreshToken });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 24 * 60 * 60 * 1000, // 24hours
+    });
+
+    return res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
   } catch (error) {
     return errorResponse(res, error.message);
   }

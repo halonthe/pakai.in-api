@@ -21,7 +21,7 @@ export default function generateToken(
   };
 
   let secret;
-  let expire = expires;
+  let expire;
 
   switch (type) {
     case "access":
@@ -34,6 +34,7 @@ export default function generateToken(
       break;
     default:
       secret = type; // allow custom secret string
+      expire = expires;
   }
 
   return jwt.sign(payload, secret, { expiresIn: expire });

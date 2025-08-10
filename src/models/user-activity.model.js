@@ -10,7 +10,7 @@ const userActivitySchema = new mongoose.Schema(
     action: {
       type: String,
       required: true,
-      enum: ["SIGNIN", "SIGNUP", "SIGNOUT", "EMAIL_VERIFICATION"],
+      enum: ["SIGNIN", "SIGNUP", "SIGNOUT", "EMAIL_VERIFICATION", 'TOKEN_REQUEST'],
     },
     deviceInfo: {
       browser: {
