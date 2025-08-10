@@ -25,3 +25,8 @@ export const registerSchema = z
     path: ["confirmPassword"],
   })
   .transform(({ name, email, password }) => ({ name, email, password }));
+
+export const loginSchema = z.object({
+  email: z.email("Please enter a valid email").lowercase(),
+  password: z.string()
+  })

@@ -68,3 +68,30 @@ export async function verifyAccount(req, res) {
     return errorResponse(res, error.message);
   }
 }
+
+export async function login(req, res) {
+  const { email, password } = req.body;
+  try {
+    // 1 - check user
+    const user = await User.findOne({ email });
+    if (!user) return errorResponse(res, "User not found", 404);
+
+    // 2 - compare password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return errorResponse(res, "Wrong password", 400);
+
+    // 3 - generate token, save token to db and client cookies
+    const accessToken = generateToken(user, "access");
+    const refreshToken = generateToken(user, "refresh");
+
+    await User.findOneAndUpdate({ email }, { refreshToken });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24hours
+    });
+
+    return successResponse(res, { token: accessToken }, "login successfull");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
