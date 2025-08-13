@@ -182,6 +182,12 @@ function createVerificationTemplate(name, url) {
     </html>`;
 }
 
+function createResetPasswordTemplate(email, name, url) {
+  return `<!--
+  * TODO : create template email for reset password
+  -->`;
+}
+
 // 2 - send email function
 export async function sendVerificationEmail(email, name, url) {
   await transporter.sendMail({
@@ -189,5 +195,14 @@ export async function sendVerificationEmail(email, name, url) {
     to: email,
     subject: "Welcome to Pakai.in - Verify your email",
     html: createVerificationTemplate(name, url),
+  });
+}
+
+export async function sendResetPasswordEmail(email, name, url) {
+  await transporter.sendMail({
+    from: "Pakai.in",
+    to: email,
+    subject: "Welcome to Pakai.in - Verify your email",
+    html: createResetPasswordTemplate(email,name, url),
   });
 }

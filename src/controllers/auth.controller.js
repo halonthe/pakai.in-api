@@ -1,9 +1,13 @@
 import "dotenv/config";
 import { successResponse, errorResponse } from "../utils/response.js";
-import { sendVerificationEmail } from "../utils/email-service.js";
+import {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+} from "../utils/email-service.js";
 import generateToken from "../utils/generate-token.js";
 import verifyToken from "../utils/verify-token.js";
 import User from "../models/user.model.js";
+import { readonly } from "zod";
 
 export async function register(req, res) {
   const { name, email, password } = req.body;
@@ -23,14 +27,11 @@ export async function register(req, res) {
     const activationToken = generateToken(user, "refresh");
     const activationLink = `${process.env.FRONTEND_URL}/verify-account/${activationToken}`;
 
-    const updateToken = await User.findByIdAndUpdate(user._id, {
-      verificationToken: activationToken,
-    });
+    user.verificationToken = activationToken;
+    await user.save();
 
     // 4 - send email verification
-    if (updateToken) {
-      await sendVerificationEmail(email, name, activationLink);
-    }
+    await sendVerificationEmail(email, name, activationLink);
 
     return successResponse(
       res,
@@ -52,16 +53,15 @@ export async function verifyEmail(req, res) {
     if (!user) return errorResponse(res, "Token invalid", 400);
 
     try {
-      verifyToken(token, "refresh");
+      await verifyToken(token, "refresh");
     } catch (error) {
       return errorResponse(res, "Token expired", 400);
     }
 
     // 2 - activate user
-    await User.findByIdAndUpdate(user._id, {
-      isVerified: true,
-      verificationToken: null,
-    });
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
 
     return successResponse(res, undefined, "Account has been verified");
   } catch (error) {
@@ -84,7 +84,9 @@ export async function login(req, res) {
     const accessToken = generateToken(user, "access");
     const refreshToken = generateToken(user, "refresh");
 
-    await User.findOneAndUpdate({ email }, { refreshToken });
+    user.refreshToken = refreshToken;
+    await user.save();
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
@@ -105,11 +107,95 @@ export async function socialLoginSuccess(req, res) {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.COOKIE_SECURE === 'true',
+      secure: process.env.COOKIE_SECURE === "true",
       maxAge: 24 * 60 * 60 * 1000, // 24hours
     });
 
     return res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return errorResponse(res, "user not found", 404);
+
+    const resetToken = generateToken(user, "access"); // expired: 1 hour
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    user.resetPasswordToken = resetToken;
+    await user.save();
+
+    await sendResetPasswordEmail(email, user.name, resetUrl);
+
+    return successResponse(
+      res,
+      undefined,
+      `Password reset link sent to ${email}`
+    );
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const { password } = req.body;
+    const { token } = req.query;
+
+    const user = await User.findOne({ resetPasswordToken: token });
+    if (!user) return errorResponse(res, "Token invalid", 400);
+
+    try {
+      await verifyToken(token, "access");
+    } catch (error) {
+      return errorResponse(res, "Token expired", 400);
+    }
+
+    user.password = password;
+    user.resetPasswordToken = null;
+    await user.save();
+
+    return successResponse(res, undefined, "Password has been updated");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function getToken(req, res) {
+  try {
+    const { token } = req.cookies;
+    if (!token) return errorResponse(res, "Token not provided", 401);
+
+    try {
+      await verifyToken(token, "refresh");
+    } catch (error) {
+      return errorResponse(res, "Unauthorized", 401);
+    }
+
+    const accessToken = generateToken(req.user, "access");
+    return successResponse(res, { token: accessToken }, "Token refreshed");
+  } catch (error) {
+    return errorResponse(res, error.message);
+  }
+}
+
+export async function logout(req, res) {
+  try {
+    const { token } = req.cookies;
+    const user = await User.findOne({ refreshToken: token });
+    if (!token || !user) return errorResponse(res, undefined, 204);
+
+    user.refreshToken = null;
+    await user.save();
+
+    res.clearCookie("refreshToken");
+
+    return successResponse(res, undefined, "Logged out");
   } catch (error) {
     return errorResponse(res, error.message);
   }

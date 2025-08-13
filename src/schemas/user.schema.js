@@ -21,12 +21,27 @@ export const registerSchema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Password and Confirm Password doesn't match",
+    error: "Password and Confirm Password doesn't match",
     path: ["confirmPassword"],
   })
   .transform(({ name, email, password }) => ({ name, email, password }));
 
 export const loginSchema = z.object({
   email: z.email("Please enter a valid email").lowercase(),
-  password: z.string()
+  password: z.string(),
+});
+
+export const emailSchema = z.object({
+  email: z.email("Please enter a valid email").lowercase(),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string(),
   })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: "Password and Confirm Password doesn't match",
+    path: ["confirmPassword"],
+  })
+  .transform(({ password }) => ({ password }));
