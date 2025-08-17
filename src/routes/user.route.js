@@ -1,9 +1,10 @@
 import express from "express";
 import "dotenv/config";
 import { getProfile } from "../controllers/user.controller.js";
+import { protectAuth } from "../middlewares/protect-auth.js";
 
-const userRouter = express.Router()
+const userRouter = express.Router();
 
-userRouter.get('/me', getProfile)
+userRouter.get("/me", protectAuth, getProfile);
 
-export default userRouter
+export default userRouter;

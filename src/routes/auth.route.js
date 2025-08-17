@@ -4,6 +4,7 @@ import 'dotenv/config'
 import passport from "../configs/passport.js";
 import { authLimiter } from "../middlewares/rate-limiter.js";
 import { validateInput } from "../middlewares/validate-input.js";
+import { protectAuth } from "../middlewares/protect-auth.js";
 import { registerSchema, loginSchema, emailSchema, resetPasswordSchema } from "../schemas/user.schema.js";
 
 import {
@@ -27,7 +28,7 @@ authRouter.post("/login", authLimiter, validateInput(loginSchema), login);
 
 authRouter.post('/logout', logout)
 
-authRouter.post('/token/refresh', getToken)
+authRouter.post('/token/refresh', protectAuth, getToken)
 
 authRouter.post("/verify-email", authLimiter, verifyEmail);
 
