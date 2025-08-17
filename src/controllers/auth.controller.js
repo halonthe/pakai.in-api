@@ -5,16 +5,26 @@ import {
   sendResetPasswordEmail,
 } from "../utils/email-service.js";
 import generateToken from "../utils/generate-token.js";
-import verifyToken from "../utils/verify-token.js";
 import User from "../models/user.model.js";
-import { readonly } from "zod";
+import verifyToken from "../utils/verify-token.js";
+import logActivity from "../middlewares/log-activity.js";
 
 export async function register(req, res) {
   const { name, email, password } = req.body;
   try {
     // 1 - check user
     const userExist = await User.findOne({ email });
-    if (userExist) return errorResponse(res, "User already exist", 409);
+    if (userExist) {
+      req.activity = {
+        user: userExist._id,
+        action: "SIGNUP",
+        status: "FAILED",
+        details: "User already exist",
+      };
+      return logActivity(req, res, () =>
+        errorResponse(res, "User already exist", 409)
+      );
+    }
 
     // 2 - create user
     const user = await User.create({
@@ -33,6 +43,15 @@ export async function register(req, res) {
     // 4 - send email verification
     await sendVerificationEmail(email, name, activationLink);
 
+    // 5 - log activity
+    req.activity = {
+      user: user._id,
+      action: "SIGNUP",
+      status: "SUCCESS",
+      details: "User registered",
+    };
+    logActivity(req, res, () => {});
+
     return successResponse(
       res,
       undefined,
@@ -40,7 +59,7 @@ export async function register(req, res) {
       201
     );
   } catch (error) {
-    return errorResponse(res, error.message);
+    return errorResponse(res, error);
   }
 }
 
@@ -55,13 +74,30 @@ export async function verifyEmail(req, res) {
     try {
       await verifyToken(token, "refresh");
     } catch (error) {
-      return errorResponse(res, "Token expired", 400);
+      req.activity = {
+        user: user._id,
+        action: "EMAIL_VERIFICATION",
+        status: "FAILED",
+        details: "Token expired",
+      };
+      return logActivity(req, res, () =>
+        errorResponse(res, "Token expired", 400)
+      );
     }
 
     // 2 - activate user
     user.isVerified = true;
     user.verificationToken = null;
     await user.save();
+
+    // 3 - log activity
+    req.activity = {
+      user: user._id,
+      action: "EMAIL_VERIFICATION",
+      status: "SUCCESS",
+      details: "Account has been verified",
+    };
+    logActivity(req, res, () => {});
 
     return successResponse(res, undefined, "Account has been verified");
   } catch (error) {
@@ -93,6 +129,15 @@ export async function login(req, res) {
       maxAge: 24 * 60 * 60 * 1000, // 24hours
     });
 
+    // 4 - log activity
+    req.activity = {
+      user: user._id,
+      action: "SIGNIN",
+      status: "SUCCESS",
+      details: "logined",
+    };
+    logActivity(req, res, () => {});
+
     return successResponse(res, { token: accessToken }, "login successfull");
   } catch (error) {
     return errorResponse(res, error.message);
@@ -110,6 +155,14 @@ export async function socialLoginSuccess(req, res) {
       secure: process.env.COOKIE_SECURE === "true",
       maxAge: 24 * 60 * 60 * 1000, // 24hours
     });
+
+    req.activity = {
+      user: req.user._id,
+      action: "SIGNUP",
+      status: "SUCCESS",
+      details: "User registered",
+    };
+    logActivity(req, res, () => {});
 
     return res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
   } catch (error) {
@@ -132,6 +185,14 @@ export async function forgotPassword(req, res) {
 
     await sendResetPasswordEmail(email, user.name, resetUrl);
 
+    req.activity = {
+      user: user._id,
+      action: "RESET_PASSWORD",
+      status: "SUCCESS",
+      details: "Request reset password",
+    };
+    logActivity(req, res, () => {});
+
     return successResponse(
       res,
       undefined,
@@ -153,6 +214,13 @@ export async function resetPassword(req, res) {
     try {
       await verifyToken(token, "access");
     } catch (error) {
+      req.activity = {
+        user: user._id,
+        action: "RESET_PASSWORD",
+        status: "FAILED",
+        details: "token expired",
+      };
+      logActivity(req, res, () => {});
       return errorResponse(res, "Token expired", 400);
     }
 
@@ -160,6 +228,13 @@ export async function resetPassword(req, res) {
     user.resetPasswordToken = null;
     await user.save();
 
+    req.activity = {
+      user: user._id,
+      action: "RESET_PASSWORD",
+      status: "SUCCESS",
+      details: "password updated",
+    };
+    logActivity(req, res, () => {});
     return successResponse(res, undefined, "Password has been updated");
   } catch (error) {
     return errorResponse(res, error.message);
@@ -174,10 +249,26 @@ export async function getToken(req, res) {
     try {
       await verifyToken(token, "refresh");
     } catch (error) {
+      req.activity = {
+        user: req.user._id,
+        action: "TOKEN_REQUEST",
+        status: "FAILED",
+        details: "refresh token expired",
+      };
+      logActivity(req, res, () => {});
       return errorResponse(res, "Unauthorized", 401);
     }
 
     const accessToken = generateToken(req.user, "access");
+
+    req.activity = {
+      user: req.user._id,
+      action: "TOKEN_REQUEST",
+      status: "SUCCESS",
+      details: "token refreshed",
+    };
+    logActivity(req, res, () => {});
+
     return successResponse(res, { token: accessToken }, "Token refreshed");
   } catch (error) {
     return errorResponse(res, error.message);
@@ -194,6 +285,14 @@ export async function logout(req, res) {
     await user.save();
 
     res.clearCookie("refreshToken");
+
+    req.activity = {
+      user: user._id,
+      action: "SIGNOUT",
+      status: "SUCCESS",
+      details: "logged out",
+    };
+    logActivity(req, res, () => {});
 
     return successResponse(res, undefined, "Logged out");
   } catch (error) {

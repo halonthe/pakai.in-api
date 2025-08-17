@@ -10,7 +10,7 @@ const userActivitySchema = new mongoose.Schema(
     action: {
       type: String,
       required: true,
-      enum: ["SIGNIN", "SIGNUP", "SIGNOUT", "EMAIL_VERIFICATION", 'TOKEN_REQUEST'],
+      enum: ["SIGNIN", "SIGNUP", "SIGNOUT", "EMAIL_VERIFICATION", 'TOKEN_REQUEST','RESET_PASSWORD'],
     },
     deviceInfo: {
       browser: {
@@ -51,6 +51,7 @@ const userActivitySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexing for faster queries
 userActivitySchema.index({ user: 1, "sessionData.timestamp": -1 });
 userActivitySchema.index({ "deviceInfo.device.type": 1 });
 userActivitySchema.index({ action: 1 });
