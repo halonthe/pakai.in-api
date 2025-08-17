@@ -45,3 +45,15 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   })
   .transform(({ password }) => ({ password }));
+
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(3, "Name to short")
+    .max(100, "Max 100 characters")
+    .optional(),
+  avatar: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional()
+});
