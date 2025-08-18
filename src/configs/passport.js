@@ -56,17 +56,17 @@ passport.use(
 );
 
 // // Facebook
-// passport.use(
-//   new FacebookStrategy(
-//     {
-//       clientID: process.env.FB_CLIENT_ID,
-//       clientSecret: process.env.FB_CLIENT_SECRET,
-//       callbackURL: "/api/auth/facebook/callback",
-//       profileFields: ["id", "displayName", "photos", "email"],
-//     },
-//     socialCallback
-//   )
-// );
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: process.env.FB_CLIENT_ID,
+      clientSecret: process.env.FB_CLIENT_SECRET,
+      callbackURL: "/api/auth/facebook/callback",
+      profileFields: ["id", "displayName", "photos", "email"],
+    },
+    socialCallback
+  )
+);
 
 // // LinkedIn
 // passport.use(

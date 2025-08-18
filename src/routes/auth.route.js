@@ -67,7 +67,23 @@ authRouter.get(
   }),
   socialLoginSuccess
 );
+
 // =================== FACEBOOK ===================
-// =================== LINKEDIN ===================
+
+authRouter.get(
+  "/facebook",
+  passport.authenticate("facebook", { scope: ['email','public_profile'] })
+);
+
+authRouter.get(
+  "/facebook/callback",
+  passport.authenticate("facebook", {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
+  }),
+  socialLoginSuccess
+);
+
+// =================== TODO: LINKEDIN ===================
 
 export default authRouter;
