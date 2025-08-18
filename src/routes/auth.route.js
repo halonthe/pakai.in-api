@@ -53,6 +53,20 @@ authRouter.get(
 );
 
 // =================== GITHUB ===================
+
+authRouter.get(
+  "/github",
+  passport.authenticate("github", { scope: ["user:email","read:user"] })
+);
+
+authRouter.get(
+  "/github/callback",
+  passport.authenticate("github", {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
+  }),
+  socialLoginSuccess
+);
 // =================== FACEBOOK ===================
 // =================== LINKEDIN ===================
 
