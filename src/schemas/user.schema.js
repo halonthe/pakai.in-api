@@ -53,7 +53,8 @@ export const updateProfileSchema = z.object({
     .min(3, "Name to short")
     .max(100, "Max 100 characters")
     .optional(),
+  email: z.email("Please enter a valid email").lowercase().optional(),
   avatar: z.string().optional(),
   address: z.string().optional(),
-  phone: z.string().optional()
+  phone: z.string().optional(),
 });
