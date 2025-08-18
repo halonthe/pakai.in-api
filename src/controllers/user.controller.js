@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { successResponse, errorResponse } from "../utils/response.js";
 import User from "../models/user.model.js";
 import generateToken from "../utils/generate-token.js";
@@ -29,8 +30,8 @@ export async function updateProfile(req, res) {
 
 export async function updateEmail(req, res) {
   try {
-    const { id, name } = req.user
-    const {email} = req.body
+    const { id, name } = req.user;
+    const { email } = req.body;
     const user = await User.findByIdAndUpdate(id, {
       email,
       isVerified: false,
